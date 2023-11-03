@@ -32,7 +32,6 @@ public class EnemyModel
 {
     public EnemyType enemyType;
     public EnemyController tankPrefab;
-    public Bullet projectPrefab;
 }
 
 public enum EnemyType

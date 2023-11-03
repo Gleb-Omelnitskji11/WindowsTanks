@@ -3,7 +3,7 @@ using UnityEngine;
 
 public class TetrisPlayerController : BasePlayerController
 {
-    private const float MoveSpeed = 20;
+    private const float MoveSpeed = 5;
 
     public override void CheckControls()
     {

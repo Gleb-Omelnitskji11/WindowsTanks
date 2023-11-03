@@ -1,75 +1,32 @@
 using System;
-using System.Collections;
 using UnityEngine;
-using Random = UnityEngine.Random;
 
 public class EnemyController : MonoBehaviour
 {
-    private float moveSpeed = 10;
-    private const float minTimeMoving = 5;
-    private const float maxTimeMoving = 20;
-
-    private Vector2[] directions = new[] { Vector2.down, Vector2.left, Vector2.up, Vector2.right };
-
-    private int curDirectionIndex = -1;
     private IEnemyBehavior _enemyBehavior;
-    private PatrollingData _patrollingData;
+    private EnemyType _enemyType;
 
-    public void Init(PatrollingData patrollingData)
+    public void Init(IEnemyBehavior enemyBehavior, string stateData, EnemyType enemyType)
     {
-        _patrollingData = patrollingData;
-        if (_patrollingData == null)
-        {
-            _patrollingData = new PatrollingData();
-            ChooseDirection();
-        }
-
-        StartCoroutine(Patrolling());
-    }
-
-    public void SetBehavior(IEnemyBehavior enemyBehavior)
-    {
+        _enemyType = enemyType;
         _enemyBehavior = enemyBehavior;
+        _enemyBehavior.SetTransform(transform);
+        _enemyBehavior.SetBehaviorData(stateData);
+        
+        StartCoroutine(_enemyBehavior.DoState());
     }
 
-    private void SetLoadData(TransformModel transformModel)
+    public EnemySaveModel GetEnemySaveModel()
     {
-        transform.position = transformModel.position;
-        transform.rotation = transformModel.rotation;
-    }
-
-    private void ChooseDirection()
-    {
-        int rnd = curDirectionIndex;
-        _patrollingData.timeMoving = Random.Range(minTimeMoving, maxTimeMoving);
-
-        while (rnd == curDirectionIndex)
+        EnemySaveModel enemySaveModel = new EnemySaveModel();
+        enemySaveModel.transformModel = new TransformModel()
         {
-            rnd = Random.Range(0, directions.Length);
-        }
-
-        curDirectionIndex = rnd;
-        _patrollingData.direction = directions[curDirectionIndex];
-        float angle = Mathf.Atan2(_patrollingData.direction.x, _patrollingData.direction.y) * Mathf.Rad2Deg;
-        transform.rotation = Quaternion.AngleAxis(-angle, Vector3.forward);
-    }
-
-    private IEnumerator Patrolling()
-    {
-        while (true)
-        {
-            _patrollingData.timeMoving -= Time.deltaTime;
-            if (_patrollingData.timeMoving == 0)
-            {
-                ChooseDirection();
-            }
-
-            Transform objectTransform = transform;
-            Vector3 pos = objectTransform.position;
-            pos += (Vector3)directions[curDirectionIndex] * (moveSpeed * Time.deltaTime);
-            objectTransform.position = pos;
-            yield return null;
-        }
+            position = transform.position,
+            rotation = transform.rotation
+        };
+        enemySaveModel.enemyType = _enemyType;
+        enemySaveModel.stateData = _enemyBehavior.GetStateData();
+        return enemySaveModel;
     }
 
     private void OnCollisionEnter2D(Collision2D collision)
@@ -77,39 +34,24 @@ public class EnemyController : MonoBehaviour
         if (collision.gameObject.tag.Equals("PlayerBullet"))
         {
             DeleteTank();
+            return;
         }
-
-        if (collision.gameObject.tag.Equals("Enemy") || collision.gameObject.tag.Equals("Player") ||
-            collision.gameObject.tag.Equals("Border"))
-        {
-            ChooseDirection();
-        }
+        
+        _enemyBehavior.OnCollisionEnter(collision.gameObject.tag);
     }
 
     private void OnCollisionStay2D(Collision2D collision)
     {
-        if (collision.gameObject.tag.Equals("Enemy"))
-        {
-            ChooseDirection();
-        }
+        _enemyBehavior.OnCollisionStay(collision.gameObject.tag);
     }
 
     private void DeleteTank()
     {
-        StopCoroutine(Patrolling());
+        StopCoroutine(_enemyBehavior.DoState());
+        gameObject.SetActive(false);
         Destroying?.Invoke(this);
         Destroy(gameObject);
     }
 
     public event Action<EnemyController> Destroying;
-}
-
-public class SimpleEnemy : IEnemyBehavior
-{
-}
-
-public class PatrollingData
-{
-    public Vector2 direction;
-    public float timeMoving;
 }

@@ -14,42 +14,46 @@ public class TankSpawner : MonoBehaviour
     private Player player;
     private (float, float, float, float) fieldForSpawn;
 
-    public void LoadLevel(Level level)
+    private void Awake()
     {
         fieldForSpawn = GetSpawnField();
-        InitPlayer(level.playerSaveModel);
-        StartCoroutine(SpawnEnemy(level.enemySaveModels));
     }
 
-    private void InitPlayer(TransformModel playerPosition)
+    public void ClearData()
+    {
+        enemies.Clear();
+    }
+
+    public Player InitPlayer(TransformModel playerPosition)
     {
         if (player != null)
         {
-            player.Destroying -= RespawnPlayer;
+            player.Destroying -= SpawnPlayerInRandomCorner;
             Destroy(player);
         }
 
         player = Instantiate(playerPrefab);
-        player.Destroying += RespawnPlayer;
+        player.Destroying += SpawnPlayerInRandomCorner;
 
         if (playerPosition == null)
         {
-            RespawnPlayer();
-            return;
+            SpawnPlayerInRandomCorner();
+            return player;
         }
 
         var playerTransform = player.transform;
         playerTransform.position = playerPosition.position;
         playerTransform.rotation = playerPosition.rotation;
+        return player;
     }
 
-    private void RespawnPlayer()
+    public void SpawnPlayerInRandomCorner()
     {
         int placeToSpawn = Random.Range(0, borders.Length);
 
-        if (!IsSpawnPossible(borders[placeToSpawn].position))
+        while(!IsSpawnPossible(borders[placeToSpawn].position, false))
         {
-            RespawnPlayer();
+            SpawnPlayerInRandomCorner();
             return;
         }
 
@@ -59,31 +63,24 @@ public class TankSpawner : MonoBehaviour
         player.gameObject.SetActive(true);
     }
 
-    private IEnumerator SpawnEnemy(EnemySaveModel[] enemiesModels)
+    public EnemyController SpawnEnemy(EnemySaveModel enemy)
     {
-        Vector2 position;
-        Quaternion rotation;
-        TransformModel enemyTransformModel;
+        TransformModel enemyTransformModel = enemy.transformModel;
 
-        foreach (var enemy in enemiesModels)
+        EnemyModel enemyPrefab = enemyConfig.GetEnemyModel(enemy.enemyType);
+        IEnemyBehavior enemyBehavior = enemyConfig.GetEnemyBehavior(enemy.enemyType);
+        if (enemyTransformModel == null)
         {
-            EnemyModel enemyPrefab = enemyConfig.GetEnemyModel(enemy.enemyType);
-            IEnemyBehavior enemyBehavior = enemyConfig.GetEnemyBehavior(enemy.enemyType);
-            enemyTransformModel = enemy.transformModel;
-            if (enemyTransformModel == null)
-            {
-                enemyTransformModel = GetRandomTransformModel();
-            }
-
-            EnemyController newEnemy = Instantiate(enemyPrefab.tankPrefab,
-                enemyTransformModel.position, enemyTransformModel.rotation);
-
-            newEnemy.Destroying += ClearEnemy;
-            newEnemy.SetBehavior(enemyBehavior);
-            newEnemy.Init(enemy.PatrollingData);
-            enemies.Add(newEnemy);
-            yield return null;
+            enemyTransformModel = GetRandomTransformModel();
         }
+
+        EnemyController newEnemy = Instantiate(enemyPrefab.tankPrefab,
+            enemyTransformModel.position, enemyTransformModel.rotation);
+
+        newEnemy.Destroying += ClearEnemy;
+        newEnemy.Init(enemyBehavior, enemy.stateData, enemy.enemyType);
+        enemies.Add(newEnemy);
+        return newEnemy;
     }
 
     private TransformModel GetRandomTransformModel()
@@ -95,7 +92,7 @@ public class TankSpawner : MonoBehaviour
                 Random.Range(fieldForSpawn.Item3, fieldForSpawn.Item4))
         };
 
-        while (!IsSpawnPossible(transformModel.position))
+        while (!IsSpawnPossible(transformModel.position, true))
         {
             transformModel.position = new Vector2(Random.Range(fieldForSpawn.Item1, fieldForSpawn.Item2),
                 Random.Range(fieldForSpawn.Item3, fieldForSpawn.Item4));
@@ -104,29 +101,39 @@ public class TankSpawner : MonoBehaviour
         return transformModel;
     }
 
-    private void ClearEnemy(EnemyController transform)
+    private void ClearEnemy(EnemyController enemyController)
     {
-        enemies.Remove(transform);
+        enemies.Remove(enemyController);
         if (enemies.Count == 0)
         {
             DestroyedAllEnemies?.Invoke();
         }
     }
 
-    private bool IsSpawnPossible(Vector2 placeToSpawn)
+    private bool IsSpawnPossible(Vector2 placeToSpawn, bool playerCheck)
     {
         const int minAllowableDistance = 10;
         float distance;
 
         for (int i = 0; i < enemies.Count; i++)
         {
-            distance = Vector2.Distance(enemies[i].transform.position, placeToSpawn);
-
-            if (distance < minAllowableDistance)
+            if (!IsDistanceSufficient(enemies[i].transform.position, placeToSpawn))
                 return false;
         }
 
+        if (playerCheck && !IsDistanceSufficient(player.transform.position, placeToSpawn))
+        {
+            return false;
+        }
+
         return true;
+
+        bool IsDistanceSufficient(Vector2 point1, Vector2 point2)
+        {
+            distance = Vector2.Distance(point1, point2);
+
+            return distance >= minAllowableDistance;
+        }
     }
 
     private (float, float, float, float) GetSpawnField()

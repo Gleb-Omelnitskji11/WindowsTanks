@@ -25,13 +25,17 @@ public class Player : MonoBehaviour
     {
         _playerController.CheckControls();
     }
-    
+
     private void OnShoot()
     {
         if (Input.GetKeyDown(KeyCode.Mouse0))
         {
-            var bullet = Instantiate(bulletPrefab, bulletSpawnPoint.position, bulletSpawnPoint.rotation);
-            bullet.GetComponent<Rigidbody2D>().velocity = bulletSpawnPoint.up * bulletSpeed;
+            TransformModel transformModel = new TransformModel()
+            {
+                position = bulletSpawnPoint.position,
+                rotation = bulletSpawnPoint.rotation
+            };
+            BulletSpawner.Instance.Shoot(transformModel, "PlayerBullet");
         }
     }
 
