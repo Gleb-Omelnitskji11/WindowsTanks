@@ -56,7 +56,7 @@ Transform:
   m_GameObject: {fileID: 2852376811949903248}
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: -0.65, y: 0, z: 0}
-  m_LocalScale: {x: 0.9765625, y: 1, z: 1}
+  m_LocalScale: {x: 0.9536743, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 2852376813767108511}
   m_RootOrder: 1
@@ -105,7 +105,7 @@ SpriteRenderer:
   m_Color: {r: 0.5882353, g: 0.5882353, b: 0.5882353, a: 1}
   m_FlipX: 0
   m_FlipY: 0
-  m_DrawMode: 2
+  m_DrawMode: 0
   m_Size: {x: 2.5, y: 2.56}
   m_AdaptiveModeThreshold: 0.5
   m_SpriteTileMode: 0
@@ -386,7 +386,7 @@ Transform:
   m_GameObject: {fileID: 2852376813129458268}
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0.65, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 0.9765625, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 2852376813767108511}
   m_RootOrder: 2
@@ -435,7 +435,7 @@ SpriteRenderer:
   m_Color: {r: 0.5882353, g: 0.5882353, b: 0.5882353, a: 1}
   m_FlipX: 0
   m_FlipY: 0
-  m_DrawMode: 2
+  m_DrawMode: 0
   m_Size: {x: 2.5, y: 2.56}
   m_AdaptiveModeThreshold: 0.5
   m_SpriteTileMode: 0
@@ -683,10 +683,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b7b7211318a6b6345a3cee1ab50628df, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  bulletSpawnPoint: {fileID: 412807303}
-  bulletPrefab: {fileID: 2644958622492886477, guid: 7c0f80b536a03b542a451e5fb3dfa3a9, type: 3}
-  bulletSpeed: 15
-  moveSpeed: 10
+  m_BulletSpawnPoint: {fileID: 412807303}
 --- !u!50 &5192816746086982655
 Rigidbody2D:
   serializedVersion: 4

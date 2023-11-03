@@ -1,79 +1,88 @@
 using System.Collections.Generic;
 using System.Linq;
+using Game.LevelSystem;
 using UnityEngine;
 
-public class BulletSpawner : MonoBehaviour
+namespace Game.Bullet
 {
-    [SerializeField] private Bullet bulletPrefab;
-    private List<Bullet> pooledBullets = new List<Bullet>();
-
-    public static BulletSpawner Instance;
-    private const float bulletSpeed = 15f;
-
-    private void Awake()
+    public class BulletSpawner : MonoBehaviour
     {
-        Instance = this;
-    }
+        [SerializeField]
+        private Bullet m_BulletPrefab;
 
-    public void Clear()
-    {
-        foreach (var bullet in pooledBullets)
+        private readonly List<Bullet> m_PooledBullets = new List<Bullet>();
+
+        public static BulletSpawner Instance;
+        private const float BulletSpeed = 15f;
+
+        private void Awake()
         {
-            bullet.TurnOff();
-        }
-    }
-
-    public void Shoot(TransformModel transformModel, string tag)
-    {
-        var bullet = GetFreeBullet();
-        var bulletTransform = bullet.transform;
-        bulletTransform.position = transformModel.position;
-        bulletTransform.rotation = transformModel.rotation;
-        bullet.tag = tag;
-        bullet.Shoot(bulletSpeed);
-    }
-
-    public BulletSaveModel[] GetBulletsData()
-    {
-        Bullet[] bullets = pooledBullets.Where(x => x.IsBusy).ToArray();
-        BulletSaveModel[] bulletModels = new BulletSaveModel[bullets.Length];
-        for (int i = 0; i < bullets.Length; i++)
-        {
-            Bullet bullet = bullets[i];
-            Transform bulletTransform = bullet.transform;
-            BulletSaveModel saveModel = new BulletSaveModel()
-            {
-                transformModel = new TransformModel()
-                {
-                    position = bulletTransform.position,
-                    rotation = bulletTransform.rotation
-                },
-                tag = bullet.gameObject.tag
-            };
-            bulletModels[i] = saveModel;
+            Instance = this;
         }
 
-        return bulletModels;
-    }
-
-    private Bullet GetFreeBullet()
-    {
-        foreach (var bullet in pooledBullets)
+        public void Clear()
         {
-            if (!bullet.IsBusy)
+            foreach (var bullet in m_PooledBullets)
             {
-                bullet.gameObject.SetActive(true);
-                return bullet;
+                bullet.TurnOff();
             }
         }
 
-        return CreateNew();
-    }
+        public void Shoot(TransformModel transformModel, string objTag)
+        {
+            var bullet = GetFreeBullet();
+            var bulletTransform = bullet.transform;
+            bulletTransform.position = transformModel.Position;
+            bulletTransform.rotation = transformModel.Rotation;
+            bullet.tag = objTag;
+            bullet.Shoot(BulletSpeed);
+        }
 
-    private Bullet CreateNew()
-    {
-        Bullet bullet = Instantiate(bulletPrefab);
-        pooledBullets.Add(bullet);
-        return bullet;
+        public BulletSaveModel[] GetBulletsData()
+        {
+            Bullet[] bullets = m_PooledBullets.Where(x => x.IsBusy).ToArray();
+            BulletSaveModel[] bulletModels = new BulletSaveModel[bullets.Length];
+
+            for (int i = 0; i < bullets.Length; i++)
+            {
+                Bullet bullet = bullets[i];
+                Transform bulletTransform = bullet.transform;
+
+                BulletSaveModel saveModel = new BulletSaveModel()
+                {
+                    TransformModel = new TransformModel()
+                    {
+                        Position = bulletTransform.position,
+                        Rotation = bulletTransform.rotation
+                    },
+                    Tag = bullet.gameObject.tag
+                };
+
+                bulletModels[i] = saveModel;
+            }
+
+            return bulletModels;
+        }
+
+        private Bullet GetFreeBullet()
+        {
+            foreach (var bullet in m_PooledBullets)
+            {
+                if (!bullet.IsBusy)
+                {
+                    bullet.gameObject.SetActive(true);
+                    return bullet;
+                }
+            }
+
+            return CreateNew();
+        }
+
+        private Bullet CreateNew()
+        {
+            Bullet bullet = Instantiate(m_BulletPrefab);
+            m_PooledBullets.Add(bullet);
+            return bullet;
+        }
     }
 }

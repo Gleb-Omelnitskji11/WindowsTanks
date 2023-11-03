@@ -12,7 +12,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ec615c907ae9c20478ff41328741759c, type: 3}
   m_Name: EnemiesConfig
   m_EditorClassIdentifier: 
-  enemyModels:
-  - enemyType: 0
-    tankPrefab: {fileID: 8531558842867251644, guid: a5ad0d4d9575531429cf1e1111b95b5f, type: 3}
-    projectPrefab: {fileID: 7020479468874931812, guid: 0227223761d6f1147a3bb38236d3cb68, type: 3}
+  m_EnemyModels:
+  - EnemyType: 0
+    TankPrefab: {fileID: 8531558842867251644, guid: a5ad0d4d9575531429cf1e1111b95b5f, type: 3}

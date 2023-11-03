@@ -1,21 +1,24 @@
 using System;
 
-public static class PlayerMovementConfig
+namespace Game.Player
 {
-    public static BasePlayerController GetMovementSystem(MovementSystemType type)
+    public static class PlayerMovementConfig
     {
-        switch (type)
+        public static BasePlayerMovement GetMovementSystem(MovementSystemType type)
         {
-            case MovementSystemType.Tetris:
-                return new TetrisPlayerController();
+            switch (type)
+            {
+                case MovementSystemType.Tetris:
+                    return new TetrisPlayerMovement();
 
-            default:
-                throw new ArgumentOutOfRangeException(nameof(type), type, null);
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(type), type, null);
+            }
         }
     }
-}
 
-public enum MovementSystemType
-{
-    Tetris
+    public enum MovementSystemType
+    {
+        Tetris
+    }
 }

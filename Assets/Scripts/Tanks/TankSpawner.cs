@@ -1,155 +1,169 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using Game.Enemy;
+using Game.LevelSystem;
+using Game.Player;
 using UnityEngine;
 using Random = UnityEngine.Random;
 
-public class TankSpawner : MonoBehaviour
+namespace Game.Tanks
 {
-    [SerializeField] private Transform[] borders;
-    [SerializeField] private Player playerPrefab;
-    [SerializeField] private EnemyConfig enemyConfig;
-    private List<EnemyController> enemies = new List<EnemyController>();
-    private Player player;
-    private (float, float, float, float) fieldForSpawn;
-
-    private void Awake()
+    public class TankSpawner : MonoBehaviour
     {
-        fieldForSpawn = GetSpawnField();
-    }
+        [SerializeField]
+        private Transform[] m_Borders;
 
-    public void ClearData()
-    {
-        enemies.Clear();
-    }
+        [SerializeField]
+        private PlayerController m_PlayerPrefab;
 
-    public Player InitPlayer(TransformModel playerPosition)
-    {
-        if (player != null)
+        [SerializeField]
+        private EnemyConfig m_EnemyConfig;
+
+        private readonly List<EnemyController> m_Enemies = new List<EnemyController>();
+        private PlayerController m_PlayerController;
+        private (float, float, float, float) m_FieldForSpawn;
+
+        private void Awake()
         {
-            player.Destroying -= SpawnPlayerInRandomCorner;
-            Destroy(player);
+            m_FieldForSpawn = GetSpawnField();
         }
 
-        player = Instantiate(playerPrefab);
-        player.Destroying += SpawnPlayerInRandomCorner;
-
-        if (playerPosition == null)
+        public void ClearData()
         {
-            SpawnPlayerInRandomCorner();
-            return player;
+            m_Enemies.Clear();
         }
 
-        var playerTransform = player.transform;
-        playerTransform.position = playerPosition.position;
-        playerTransform.rotation = playerPosition.rotation;
-        return player;
-    }
-
-    public void SpawnPlayerInRandomCorner()
-    {
-        int placeToSpawn = Random.Range(0, borders.Length);
-
-        while(!IsSpawnPossible(borders[placeToSpawn].position, false))
+        public PlayerController InitPlayer(TransformModel playerPosition)
         {
-            SpawnPlayerInRandomCorner();
-            return;
+            if (m_PlayerController != null)
+            {
+                m_PlayerController.Destroying -= SpawnPlayerInRandomCorner;
+                Destroy(m_PlayerController);
+            }
+
+            m_PlayerController = Instantiate(m_PlayerPrefab);
+            m_PlayerController.Destroying += SpawnPlayerInRandomCorner;
+
+            if (playerPosition == null)
+            {
+                SpawnPlayerInRandomCorner();
+                return m_PlayerController;
+            }
+
+            var playerTransform = m_PlayerController.transform;
+            playerTransform.position = playerPosition.Position;
+            playerTransform.rotation = playerPosition.Rotation;
+            return m_PlayerController;
         }
 
-        var playerTransform = player.transform;
-        playerTransform.position = borders[placeToSpawn].position;
-        playerTransform.rotation = borders[placeToSpawn].rotation;
-        player.gameObject.SetActive(true);
-    }
-
-    public EnemyController SpawnEnemy(EnemySaveModel enemy)
-    {
-        TransformModel enemyTransformModel = enemy.transformModel;
-
-        EnemyModel enemyPrefab = enemyConfig.GetEnemyModel(enemy.enemyType);
-        IEnemyBehavior enemyBehavior = enemyConfig.GetEnemyBehavior(enemy.enemyType);
-        if (enemyTransformModel == null)
+        public void SpawnPlayerInRandomCorner()
         {
-            enemyTransformModel = GetRandomTransformModel();
+            int placeToSpawn = Random.Range(0, m_Borders.Length);
+
+            while (!IsSpawnPossible(m_Borders[placeToSpawn].position, false))
+            {
+                SpawnPlayerInRandomCorner();
+                return;
+            }
+
+            var playerTransform = m_PlayerController.transform;
+            playerTransform.position = m_Borders[placeToSpawn].position;
+            playerTransform.rotation = m_Borders[placeToSpawn].rotation;
+            m_PlayerController.gameObject.SetActive(true);
         }
 
-        EnemyController newEnemy = Instantiate(enemyPrefab.tankPrefab,
-            enemyTransformModel.position, enemyTransformModel.rotation);
-
-        newEnemy.Destroying += ClearEnemy;
-        newEnemy.Init(enemyBehavior, enemy.stateData, enemy.enemyType);
-        enemies.Add(newEnemy);
-        return newEnemy;
-    }
-
-    private TransformModel GetRandomTransformModel()
-    {
-        TransformModel transformModel = new TransformModel()
+        public EnemyController SpawnEnemy(EnemySaveModel enemy)
         {
-            rotation = Quaternion.identity,
-            position = new Vector2(Random.Range(fieldForSpawn.Item1, fieldForSpawn.Item2),
-                Random.Range(fieldForSpawn.Item3, fieldForSpawn.Item4))
-        };
+            TransformModel enemyTransformModel = enemy.TransformModel;
 
-        while (!IsSpawnPossible(transformModel.position, true))
-        {
-            transformModel.position = new Vector2(Random.Range(fieldForSpawn.Item1, fieldForSpawn.Item2),
-                Random.Range(fieldForSpawn.Item3, fieldForSpawn.Item4));
+            EnemyModel enemyPrefab = m_EnemyConfig.GetEnemyModel(enemy.EnemyType);
+            IEnemyBehavior enemyBehavior = m_EnemyConfig.GetEnemyBehavior(enemy.EnemyType);
+
+            if (enemyTransformModel == null)
+            {
+                enemyTransformModel = GetRandomTransformModel();
+            }
+
+            EnemyController newEnemy = Instantiate(enemyPrefab.TankPrefab, enemyTransformModel.Position,
+                enemyTransformModel.Rotation);
+
+            newEnemy.Destroying += ClearEnemy;
+            newEnemy.Init(enemyBehavior, enemy.StateData, enemy.EnemyType);
+            m_Enemies.Add(newEnemy);
+            return newEnemy;
         }
 
-        return transformModel;
-    }
-
-    private void ClearEnemy(EnemyController enemyController)
-    {
-        enemies.Remove(enemyController);
-        if (enemies.Count == 0)
+        private TransformModel GetRandomTransformModel()
         {
-            DestroyedAllEnemies?.Invoke();
+            TransformModel transformModel = new TransformModel()
+            {
+                Rotation = Quaternion.identity,
+                Position = new Vector2(Random.Range(m_FieldForSpawn.Item1, m_FieldForSpawn.Item2),
+                    Random.Range(m_FieldForSpawn.Item3, m_FieldForSpawn.Item4))
+            };
+
+            while (!IsSpawnPossible(transformModel.Position, true))
+            {
+                transformModel.Position = new Vector2(Random.Range(m_FieldForSpawn.Item1, m_FieldForSpawn.Item2),
+                    Random.Range(m_FieldForSpawn.Item3, m_FieldForSpawn.Item4));
+            }
+
+            return transformModel;
         }
-    }
 
-    private bool IsSpawnPossible(Vector2 placeToSpawn, bool playerCheck)
-    {
-        const int minAllowableDistance = 10;
-        float distance;
-
-        for (int i = 0; i < enemies.Count; i++)
+        private void ClearEnemy(EnemyController enemyController)
         {
-            if (!IsDistanceSufficient(enemies[i].transform.position, placeToSpawn))
+            m_Enemies.Remove(enemyController);
+
+            if (m_Enemies.Count == 0)
+            {
+                DestroyedAllEnemies?.Invoke();
+            }
+        }
+
+        private bool IsSpawnPossible(Vector2 placeToSpawn, bool playerCheck)
+        {
+            const int minAllowableDistance = 10;
+            float distance;
+
+            foreach (EnemyController enemy in m_Enemies)
+            {
+                if (!IsDistanceSufficient(enemy.transform.position, placeToSpawn))
+                    return false;
+            }
+
+            if (playerCheck && !IsDistanceSufficient(m_PlayerController.transform.position, placeToSpawn))
+            {
                 return false;
+            }
+
+            return true;
+
+            bool IsDistanceSufficient(Vector2 point1, Vector2 point2)
+            {
+                distance = Vector2.Distance(point1, point2);
+
+                return distance >= minAllowableDistance;
+            }
         }
 
-        if (playerCheck && !IsDistanceSufficient(player.transform.position, placeToSpawn))
+        private (float, float, float, float) GetSpawnField()
         {
-            return false;
+            Vector2[] corners = new Vector2[m_Borders.Length];
+
+            for (int i = 0; i < m_Borders.Length; i++)
+            {
+                corners[i] = m_Borders[i].position;
+            }
+
+            float minX = corners.Min(x => x.x);
+            float maxX = corners.Max(x => x.x);
+            float minY = corners.Min(x => x.y);
+            float maxY = corners.Max(x => x.y);
+            return (minX, maxX, minY, maxY);
         }
 
-        return true;
-
-        bool IsDistanceSufficient(Vector2 point1, Vector2 point2)
-        {
-            distance = Vector2.Distance(point1, point2);
-
-            return distance >= minAllowableDistance;
-        }
+        public event Action DestroyedAllEnemies;
     }
-
-    private (float, float, float, float) GetSpawnField()
-    {
-        Vector2[] corners = new Vector2[borders.Length];
-        for (int i = 0; i < borders.Length; i++)
-        {
-            corners[i] = borders[i].position;
-        }
-
-        float minX = corners.Min(x => x.x);
-        float maxX = corners.Max(x => x.x);
-        float minY = corners.Min(x => x.y);
-        float maxY = corners.Max(x => x.y);
-        return (minX, maxX, minY, maxY);
-    }
-
-    public event Action DestroyedAllEnemies;
 }

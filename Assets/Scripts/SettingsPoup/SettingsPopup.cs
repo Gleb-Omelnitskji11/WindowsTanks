@@ -1,60 +1,59 @@
 using System;
+using Game.LevelSystem;
+using Game.SavingService;
 using UnityEngine;
 using UnityEngine.UI;
 
-public class SettingsPopup : MonoBehaviour
+namespace Game.Settings
 {
-    [SerializeField] private Button SaveButton;
-    [SerializeField] private Button LoadButton;
-
-    private const string LevelDataFileName = "level-data";
-
-    private void Awake()
+    public class SettingsPopup : MonoBehaviour
     {
-        SaveButton.onClick.AddListener(Save);
-        LoadButton.onClick.AddListener(Load);
-    }
+        [SerializeField]
+        private Button m_SaveButton;
 
-    private void OnEnable()
-    {
-        Time.timeScale = 0f;
-    }
-    
-    private void OnDisable()
-    {
-        Time.timeScale = 1f;
-    }
+        [SerializeField]
+        private Button m_LoadButton;
 
-    public void ManageActive()
-    {
-        gameObject.SetActive(!gameObject.activeSelf);
-    }
+        private const string LevelDataFileName = "level-data";
 
-    private void Save()
-    {
-        Level level = LevelLoader.LevelLoaderInstance.GetLevelData();
-
-        try
+        private void Awake()
         {
+            m_SaveButton.onClick.AddListener(Save);
+            m_LoadButton.onClick.AddListener(Load);
+        }
+
+        private void OnEnable()
+        {
+            Time.timeScale = 0f;
+        }
+
+        private void OnDisable()
+        {
+            Time.timeScale = 1f;
+        }
+
+        public void ManageActive()
+        {
+            gameObject.SetActive(!gameObject.activeSelf);
+        }
+
+        private void Save()
+        {
+            Level level = LevelLoader.LevelLoaderInstance.GetLevelData();
             JsonDataService.SaveData(LevelDataFileName, level);
         }
-        catch (Exception e)
-        {
-            Debug.LogError("Could not save file! Error : {e.Message} {e.StackTrace}");
-        }
-    }
 
-    private void Load()
-    {
-        try
+        private void Load()
         {
-            Level level = JsonDataService.LoadData<Level>(LevelDataFileName);
-            LevelLoader.LevelLoaderInstance.DownloadLevel(level);
+            try
+            {
+                Level level = JsonDataService.LoadData<Level>(LevelDataFileName);
+                LevelLoader.LevelLoaderInstance.DownloadLevel(level);
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"Something went wrong! Error : {e.Message} {e.StackTrace}");
+            }
         }
-        catch (Exception e)
-        {
-            Debug.LogError($"Something went wrong! Error : {e.Message} {e.StackTrace}");
-        }
-
     }
 }

@@ -1,40 +1,41 @@
 using System;
-using System.Collections;
-using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
-[CreateAssetMenu(fileName = "EnemiesConfig", menuName = "ScriptableObjects/EnemiesConfig", order = 0)]
-public class EnemyConfig : ScriptableObject
+namespace Game.Enemy
 {
-    [SerializeField]
-    private EnemyModel[] enemyModels;
-
-    public IEnemyBehavior GetEnemyBehavior(EnemyType enemyType)
+    [CreateAssetMenu(fileName = "EnemiesConfig", menuName = "ScriptableObjects/EnemiesConfig", order = 0)]
+    public class EnemyConfig : ScriptableObject
     {
-        switch (enemyType)
+        [SerializeField]
+        private EnemyModel[] m_EnemyModels;
+
+        public IEnemyBehavior GetEnemyBehavior(EnemyType enemyType)
         {
-            case EnemyType.simpleEnemy:
-                return new SimpleEnemy();
-            default:
-                throw new ArgumentOutOfRangeException(nameof(enemyType), enemyType, null);
+            switch (enemyType)
+            {
+                case EnemyType.SimpleEnemy:
+                    return new SimpleEnemy();
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(enemyType), enemyType, null);
+            }
+        }
+
+        public EnemyModel GetEnemyModel(EnemyType enemyType)
+        {
+            return m_EnemyModels.FirstOrDefault(x => x.EnemyType == enemyType);
         }
     }
-    
-    public EnemyModel GetEnemyModel(EnemyType enemyType)
-    {
-        return enemyModels.FirstOrDefault(x => x.enemyType == enemyType);
-    }
-}
 
-[Serializable]
-public class EnemyModel
-{
-    public EnemyType enemyType;
-    public EnemyController tankPrefab;
+    [Serializable]
+    public class EnemyModel
+    {
+        public EnemyType EnemyType;
+        public EnemyController TankPrefab;
+    }
 }
 
 public enum EnemyType
 {
-    simpleEnemy
+    SimpleEnemy
 }

@@ -1,57 +1,68 @@
 using System;
+using Game.LevelSystem;
 using UnityEngine;
 
-public class EnemyController : MonoBehaviour
+namespace Game.Enemy
 {
-    private IEnemyBehavior _enemyBehavior;
-    private EnemyType _enemyType;
-
-    public void Init(IEnemyBehavior enemyBehavior, string stateData, EnemyType enemyType)
+    public class EnemyController : MonoBehaviour
     {
-        _enemyType = enemyType;
-        _enemyBehavior = enemyBehavior;
-        _enemyBehavior.SetTransform(transform);
-        _enemyBehavior.SetBehaviorData(stateData);
-        
-        StartCoroutine(_enemyBehavior.DoState());
-    }
+        [SerializeField]
+        private Transform m_BulletSpawnPoint;
 
-    public EnemySaveModel GetEnemySaveModel()
-    {
-        EnemySaveModel enemySaveModel = new EnemySaveModel();
-        enemySaveModel.transformModel = new TransformModel()
+        private IEnemyBehavior m_EnemyBehavior;
+        private EnemyType m_EnemyType;
+
+        public void Init(IEnemyBehavior enemyBehavior, string stateData, EnemyType enemyType)
         {
-            position = transform.position,
-            rotation = transform.rotation
-        };
-        enemySaveModel.enemyType = _enemyType;
-        enemySaveModel.stateData = _enemyBehavior.GetStateData();
-        return enemySaveModel;
-    }
+            m_EnemyType = enemyType;
+            m_EnemyBehavior = enemyBehavior;
+            m_EnemyBehavior.SetTransform(transform);
+            m_EnemyBehavior.SetBehaviorData(stateData);
 
-    private void OnCollisionEnter2D(Collision2D collision)
-    {
-        if (collision.gameObject.tag.Equals("PlayerBullet"))
-        {
-            DeleteTank();
-            return;
+            StartCoroutine(m_EnemyBehavior.DoState());
         }
-        
-        _enemyBehavior.OnCollisionEnter(collision.gameObject.tag);
-    }
 
-    private void OnCollisionStay2D(Collision2D collision)
-    {
-        _enemyBehavior.OnCollisionStay(collision.gameObject.tag);
-    }
+        public EnemySaveModel GetEnemySaveModel()
+        {
+            EnemySaveModel enemySaveModel = new EnemySaveModel();
 
-    private void DeleteTank()
-    {
-        StopCoroutine(_enemyBehavior.DoState());
-        gameObject.SetActive(false);
-        Destroying?.Invoke(this);
-        Destroy(gameObject);
-    }
+            Transform transform1 = transform;
 
-    public event Action<EnemyController> Destroying;
+            enemySaveModel.TransformModel = new TransformModel()
+            {
+                Position = transform1.position,
+                Rotation = transform1.rotation
+            };
+
+            enemySaveModel.EnemyType = m_EnemyType;
+            enemySaveModel.StateData = m_EnemyBehavior.GetStateData();
+            return enemySaveModel;
+        }
+
+        private void OnCollisionEnter2D(Collision2D collision)
+        {
+            if (collision.gameObject.tag.Equals("PlayerBullet"))
+            {
+                DeleteTank();
+                return;
+            }
+
+            m_EnemyBehavior.OnCollisionEnter(collision.gameObject.tag);
+        }
+
+        private void OnCollisionStay2D(Collision2D collision)
+        {
+            m_EnemyBehavior.OnCollisionStay(collision.gameObject.tag);
+        }
+
+        private void DeleteTank()
+        {
+            StopCoroutine(m_EnemyBehavior.DoState());
+            gameObject.SetActive(false);
+            Destroying?.Invoke(this);
+            Destroy(gameObject);
+        }
+
+        public event Action<EnemyController> Destroying;
+    }
 }

@@ -1,108 +1,111 @@
-using System;
 using System.Collections;
-using System.Linq;
 using UnityEngine;
 using Random = UnityEngine.Random;
 
-public class SimpleEnemy : IEnemyBehavior
+namespace Game.Enemy
 {
-    private readonly Vector2[] directions = new[] { Vector2.down, Vector2.left, Vector2.up, Vector2.right };
-    private const float minTimeMoving = 1;
-    private const float maxTimeMoving = 5;
-    private const float moveSpeed = 5;
-
-    private int curDirectionIndex = -1;
-    private PatrollingData behaviorData;
-    private Transform enemy;
-
-    public void SetBehaviorData(string stateData)
+    public class SimpleEnemy : IEnemyBehavior
     {
-        if (stateData != null)
+        private readonly Vector2[] m_Directions = new[] { Vector2.down, Vector2.left, Vector2.up, Vector2.right };
+        private const float MinTimeMoving = 1;
+        private const float MaxTimeMoving = 5;
+        private const float MoveSpeed = 5;
+
+        private int m_CurDirectionIndex = -1;
+        private PatrollingData m_BehaviorData;
+        private Transform m_Enemy;
+
+        public void SetBehaviorData(string stateData)
         {
-            behaviorData = JsonUtility.FromJson<PatrollingData>(stateData);
-            for (int i = 0; i < directions.Length; i++)
+            if (stateData != null)
             {
-                if (directions[i].Equals(behaviorData._direction))
+                m_BehaviorData = JsonUtility.FromJson<PatrollingData>(stateData);
+
+                for (int i = 0; i < m_Directions.Length; i++)
                 {
-                    curDirectionIndex = i;
-                    break;
+                    if (m_Directions[i].Equals(m_BehaviorData.Direction))
+                    {
+                        m_CurDirectionIndex = i;
+                        break;
+                    }
                 }
+
+                return;
             }
 
-            return;
+            m_BehaviorData = new PatrollingData();
         }
 
-        behaviorData = new PatrollingData();
-    }
 
-
-    public void SetTransform(Transform obj)
-    {
-        enemy = obj;
-    }
-
-    public void OnCollisionEnter(string objectTag)
-    {
-        if (objectTag.Equals("Enemy") || objectTag.Equals("Player") || objectTag.Equals("Border"))
+        public void SetTransform(Transform obj)
         {
-            ChooseDirection();
+            m_Enemy = obj;
         }
-    }
 
-    public void OnCollisionStay(string objectTag)
-    {
-        if (objectTag.Equals("Enemy") || objectTag.Equals("Border"))
+        public void OnCollisionEnter(string objectTag)
         {
-            ChooseDirection();
+            if (objectTag.Equals("Enemy") || objectTag.Equals("Player") || objectTag.Equals("Border"))
+            {
+                ChooseDirection();
+            }
         }
-    }
 
-    public IEnumerator DoState()
-    {
-        while (true)
+        public void OnCollisionStay(string objectTag)
         {
-            Patrolling();
-            yield return null;
+            if (objectTag.Equals("Enemy") || objectTag.Equals("Border"))
+            {
+                ChooseDirection();
+            }
         }
-    }
 
-    public string GetStateData()
-    {
-        return JsonUtility.ToJson(behaviorData);
-    }
-
-    private void Patrolling()
-    {
-        behaviorData._timeMoving -= Time.deltaTime;
-        if (behaviorData._timeMoving <= 0)
+        public IEnumerator DoState()
         {
-            ChooseDirection();
+            while (true)
+            {
+                Patrolling();
+                yield return null;
+            }
         }
 
-        Vector3 pos = enemy.position;
-        pos += (Vector3)directions[curDirectionIndex] * (moveSpeed * Time.deltaTime);
-        enemy.position = pos;
-    }
-
-    private void ChooseDirection()
-    {
-        int rnd = curDirectionIndex;
-        behaviorData._timeMoving = Random.Range(minTimeMoving, maxTimeMoving);
-
-        while (rnd == curDirectionIndex)
+        public string GetStateData()
         {
-            rnd = Random.Range(0, directions.Length);
+            return JsonUtility.ToJson(m_BehaviorData);
         }
 
-        curDirectionIndex = rnd;
-        behaviorData._direction = directions[curDirectionIndex];
-        float angle = Mathf.Atan2(behaviorData._direction.x, behaviorData._direction.y) * Mathf.Rad2Deg;
-        enemy.rotation = Quaternion.AngleAxis(-angle, Vector3.forward);
-    }
-}
+        private void Patrolling()
+        {
+            m_BehaviorData.TimeMoving -= Time.deltaTime;
 
-public class PatrollingData
-{
-    public Vector2 _direction;
-    public float _timeMoving;
+            if (m_BehaviorData.TimeMoving <= 0)
+            {
+                ChooseDirection();
+            }
+
+            Vector3 pos = m_Enemy.position;
+            pos += (Vector3)m_Directions[m_CurDirectionIndex] * (MoveSpeed * Time.deltaTime);
+            m_Enemy.position = pos;
+        }
+
+        private void ChooseDirection()
+        {
+            int rnd = m_CurDirectionIndex;
+            m_BehaviorData.TimeMoving = Random.Range(MinTimeMoving, MaxTimeMoving);
+
+            while (rnd == m_CurDirectionIndex)
+            {
+                rnd = Random.Range(0, m_Directions.Length);
+            }
+
+            m_CurDirectionIndex = rnd;
+            m_BehaviorData.Direction = m_Directions[m_CurDirectionIndex];
+            float angle = Mathf.Atan2(m_BehaviorData.Direction.x, m_BehaviorData.Direction.y) * Mathf.Rad2Deg;
+            m_Enemy.rotation = Quaternion.AngleAxis(-angle, Vector3.forward);
+        }
+    }
+
+    public class PatrollingData
+    {
+        public Vector2 Direction;
+        public float TimeMoving;
+    }
 }

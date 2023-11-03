@@ -1,25 +1,30 @@
 using UnityEngine;
 
-public class Bullet : MonoBehaviour
+namespace Game.Bullet
 {
-    [SerializeField] private Rigidbody2D m_Rigidbody;
-    public bool IsBusy { get; private set; }
+    public class Bullet : MonoBehaviour
+    {
+        [SerializeField]
+        private Rigidbody2D m_Rigidbody;
 
-    public void Shoot(float bulletSpeed)
-    {
-        IsBusy = true;
-        m_Rigidbody.velocity = transform.up * bulletSpeed;
-    }
+        public bool IsBusy { get; private set; }
 
-    public void TurnOff()
-    {
-        m_Rigidbody.velocity = Vector2.zero;
-        gameObject.SetActive(false);
-        IsBusy = false;
-    }
-    
-    private void OnCollisionEnter2D(Collision2D collision)
-    {
-        TurnOff();
+        public void Shoot(float bulletSpeed)
+        {
+            IsBusy = true;
+            m_Rigidbody.velocity = transform.up * bulletSpeed;
+        }
+
+        public void TurnOff()
+        {
+            m_Rigidbody.velocity = Vector2.zero;
+            gameObject.SetActive(false);
+            IsBusy = false;
+        }
+
+        private void OnCollisionEnter2D(Collision2D collision)
+        {
+            TurnOff();
+        }
     }
 }
